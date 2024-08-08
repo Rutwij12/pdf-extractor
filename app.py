@@ -91,26 +91,18 @@ def extract_text_and_images(pdf_path, marked_rectangles):
 
     # rect_images is a list of base64 encoded images extracted from each rectangle in the format of:
     # ['base64_encoded_image_1', 'base64_encoded_image_2', ...]
-
-    write_data_to_file(extracted_data); 
     return extracted_data, marked_rectangles, rect_images
-
-def write_data_to_file(data):
-    data_filepath = os.path.join(app.config['DATA_FOLDER'], 'extracted_data.json')
-    json_object = json.dumps(data, indent=4)
-
-    with open(data_filepath, 'a') as f:
-        f.write(json_object)
 
 @app.route('/save_rectangles', methods=['POST'])
 def save_rectangles():
+    data_filepath = os.path.join(app.config['DATA_FOLDER'], 'user_data.json')
     data = request.get_json()
 
     # Extract the rectangles data
     rectangles = data.get('rectangles', [])
 
     # Save the data to a file or handle it as needed
-    with open('rectangles_data.json', 'w') as f:
+    with open(data_filepath, 'w') as f:
         json.dump(rectangles, f, indent=4)
 
     return jsonify({'message': 'Rectangles data saved successfully!'}), 200

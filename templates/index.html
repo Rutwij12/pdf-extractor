@@ -167,7 +167,6 @@
         }
 
         function extractMarkedFields() {
-            alert("Extracting marked fields");
             const pdfFile = document.getElementById('pdfFile').files[0];
             const formData = new FormData();
             formData.append('pdfFile', pdfFile);
@@ -263,7 +262,6 @@
         }
 
         function editRectangleName(index, currentName) {
-            alert("Editing Rectangle Name"); // Just to check if the function is triggered
             const rectDiv = document.getElementById(`rectangle${index}`);
 
             rectDiv.innerHTML = ''; // Clear the current content

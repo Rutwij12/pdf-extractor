@@ -1,0 +1,14 @@
+[
+    {
+        "name": "info",
+        "text": "Rutwij Patel \nImperial College London"
+    },
+    {
+        "name": "title",
+        "text": "Pintos Task 0"
+    },
+    {
+        "name": "text",
+        "text": "Using strcpy() can overflow the buffer i"
+    }
+]
