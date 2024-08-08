@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PDF Annotation and Extraction</title>
+    <style>
+        #pdfViewerContainer {
+            position: relative;
+            width: 100%;
+            height: 800px;
+        }
+        #pdfViewer, #pdfOverlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+        #pdfOverlay {
+            z-index: 1;
+        }
+        .rectangle-info {
+            border: 1px solid #000;
+            padding: 10px;
+            margin: 10px 0;
+        }
+        .remove-button, .edit-button, .update-button {
+            margin-left: 10px;
+            cursor: pointer;
+            color: red;
+        }
+        .edit-input {
+            width: 300px;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>PDF Annotation and Extraction</h1>
+    <form id="pdfForm" enctype="multipart/form-data">
+        <label for="pdfFile">Choose a PDF file:</label>
+        <input type="file" id="pdfFile" name="pdfFile" accept=".pdf" required><br><br>
+        <button type="button" onclick="extractMarkedFields()">Extract Marked Fields</button>
+    </form>
+
+    <h2>Extracted Text and Rectangles:</h2>
+    <div id="extractedTextContainer"></div>
+
+    <h2>PDF Viewer:</h2>
+    <div id="pdfViewerContainer">
+        <canvas id="pdfViewer"></canvas>
+        <canvas id="pdfOverlay"></canvas>
+    </div>
+
+    <h2>Edit Text in Rectangles:</h2>
+    <div id="editTextContainer"></div>
+
+    <h2>Updated PDF:</h2>
+    <div id="updatedPdfContainer"></div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.11.338/pdf.min.js"></script>
+    <script>
+        let pdfDoc = null;
+        let pageNum = 1;
+        let markedRectangles = [];
+        let isDrawing = false;
+        let startX, startY, currentX, currentY;
+        const scale = 1.5;
+
+        document.getElementById('pdfFile').addEventListener('change', handleFileSelect, false);
+
+        const overlayCanvas = document.getElementById('pdfOverlay');
+        const overlayContext = overlayCanvas.getContext('2d');
+
+        overlayCanvas.addEventListener('mousedown', function(e) {
+            if (isDrawing) return;
+            isDrawing = true;
+            const rect = overlayCanvas.getBoundingClientRect();
+            startX = (e.clientX - rect.left) / scale;
+            startY = (e.clientY - rect.top) / scale;
+            currentX = startX;
+            currentY = startY;
+            clearExtractedText();
+        });
+
+        overlayCanvas.addEventListener('mousemove', function(e) {
+            if (!isDrawing) return;
+            const rect = overlayCanvas.getBoundingClientRect();
+            currentX = (e.clientX - rect.left) / scale;
+            currentY = (e.clientY - rect.top) / scale;
+            overlayContext.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
+            renderMarkedRectangle(startX, startY, currentX, currentY);
+        });
+
+        overlayCanvas.addEventListener('mouseup', function(e) {
+            if (!isDrawing) return;
+            isDrawing = false;
+            const rect = overlayCanvas.getBoundingClientRect();
+            currentX = (e.clientX - rect.left) / scale;
+            currentY = (e.clientY - rect.top) / scale;
+            const newRectangle = normalizeRectangle(startX, startY, currentX, currentY);
+            markedRectangles.push(newRectangle);
+            renderMarkedRectangle(newRectangle.startX, newRectangle.startY, newRectangle.endX, newRectangle.endY);
+            extractMarkedFields();
+        });
+
+        function handleFileSelect(evt) {
+            const file = evt.target.files[0];
+            const reader = new FileReader();
+
+            reader.onload = function(event) {
+                const pdfData = new Uint8Array(event.target.result);
+                renderPDF(pdfData);
+            };
+
+            reader.readAsArrayBuffer(file);
+        }
+
+        function renderPDF(data) {
+            pdfjsLib.getDocument(data).promise.then(function(pdf) {
+                pdfDoc = pdf;
+                renderPage(pageNum);
+            });
+        }
+
+        function renderPage(num) {
+            pdfDoc.getPage(num).then(function(page) {
+                const viewport = page.getViewport({ scale });
+
+                const canvas = document.getElementById('pdfViewer');
+                const context = canvas.getContext('2d');
+                canvas.height = viewport.height;
+                canvas.width = viewport.width;
+
+                overlayCanvas.height = viewport.height;
+                overlayCanvas.width = viewport.width;
+
+                page.render({
+                    canvasContext: context,
+                    viewport: viewport
+                }).promise.then(() => {
+                    renderMarkedRectangle(startX, startY, currentX, currentY);
+                });
+            });
+        }
+
+        function renderMarkedRectangle(startX, startY, currentX, currentY) {
+            overlayContext.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
+            overlayContext.strokeStyle = 'red';
+            overlayContext.lineWidth = 2;
+            overlayContext.strokeRect(startX * scale, startY * scale, (currentX - startX) * scale, (currentY - startY) * scale);
+        }
+
+        function clearExtractedText() {
+            const extractedTextContainer = document.getElementById('extractedTextContainer');
+            extractedTextContainer.innerHTML = '';
+        }
+
+        function normalizeRectangle(x1, y1, x2, y2) {
+            return {
+                startX: Math.min(x1, x2),
+                startY: Math.min(y1, y2),
+                endX: Math.max(x1, x2),
+                endY: Math.max(y1, y2),
+                page: pageNum - 1
+            };
+        }
+
+        function extractMarkedFields() {
+            const pdfFile = document.getElementById('pdfFile').files[0];
+            const formData = new FormData();
+            formData.append('pdfFile', pdfFile);
+            formData.append('markedRectangles', JSON.stringify(markedRectangles));
+
+            fetch('/extract', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                displayExtractedData(data.extractedData, data.markedRectangles, data.rectImages);
+            })
+            .catch(error => console.error('Error:', error));
+        }
+
+        // the format of rectangles is: {startX, startY, endX, endY, page}
+        // so when we do rectangles.forEach((rect, index) => ...), rect is an object with these properties:
+        // rect.startX, rect.startY, rect.endX, rect.endY, rect.page and index is an object with these properties: 
+
+        function displayExtractedData(data, rectangles, images) {
+            const extractedTextContainer = document.getElementById('extractedTextContainer');
+            extractedTextContainer.innerHTML = '';
+
+            rectangles.forEach((rect, index) => {
+                const div = document.createElement('div');
+                div.className = 'rectangle-info';
+                div.innerHTML = `
+                    <div id="rectangle${index + 1}"><Strong>Rectangle ${index + 1}</Strong></div><br>
+                    <strong>Extracted Text (JSON):</strong><br>
+                    <div id="text${index}">${JSON.stringify(data[index+1])}</div><br>
+                    <strong>Image:</strong><br>
+                    <img src="data:image/png;base64,${images[index]}" alt="Rectangle Image"><br>
+                    <button class="remove-button" onclick="removeRectangle(${index})">Remove</button>
+                    <button class="edit-button" onclick="editText(${index}, '${data[index]}')">Edit Text</button>
+                    <button class="edit-button" onclick="editRectangleName(${index}, '${data[index]}')">Edit Rectangle Name</button>
+                `;
+                extractedTextContainer.appendChild(div);
+            });
+        }
+
+        function removeRectangle(index) {
+            markedRectangles.splice(index, 1);
+            extractMarkedFields();
+        }
+
+        function editText(index, currentText) {
+            const textElement = document.getElementById(`text${index}`);
+            const editButton = document.querySelector(`.edit-button:nth-of-type(${index + 1})`);
+            editButton.style.display = 'none';
+
+            const updateButton = document.createElement('button');
+            updateButton.className = 'update-button';
+            updateButton.textContent = 'Update Text';
+            updateButton.onclick = () => updateText(index, textElement.textContent);
+            textElement.innerHTML = '';
+            const editInput = document.createElement('textarea');
+            editInput.className = 'edit-input';
+            editInput.value = currentText;
+            textElement.appendChild(editInput);
+            textElement.appendChild(updateButton);
+        }
+
+        function editRectangleName(index, currentName) {
+            // Locate the rectangle name div
+            const rectDiv = document.getElementById(`rectangle${index + 1}`);
+            
+            // Clear the current contents of the div
+            rectDiv.innerHTML = '';
+
+            // Create an input box with the current name as the default value
+            const inputBox = document.createElement('input');
+            inputBox.type = 'text';
+            inputBox.value = `Rectangle ${index + 1}`;
+            inputBox.id = `edit-name-${index}`;
+
+            // Create a save button
+            const saveButton = document.createElement('button');
+            saveButton.textContent = 'Save';
+            saveButton.onclick = function() {
+                saveRectangleName(index);
+            };
+
+            // Append the input box and save button to the div
+            rectDiv.appendChild(inputBox);
+            rectDiv.appendChild(saveButton);
+        }
+
+        function saveRectangleName(index) { 
+            // Get the new rectangle name from the input box
+            const newName = document.getElementById(`edit-name-${index}`).value;
+
+            // Update the rectangle name in the DOM
+            const rectDiv = document.getElementById(`rectangle${index + 1}`);
+            rectDiv.innerHTML = `<Strong>${newName}</Strong>`;
+
+            const data = {
+                index: index + 1,
+                newName: newName,
+            }
+            
+        }
+
+        function updateText(index, currentText) {
+            markedRectangles[index].text = document.querySelector(`#text${index} textarea`).value;
+            extractMarkedFields();
+        }
+    </script>
+</body>
+</html>
