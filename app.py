@@ -70,7 +70,7 @@ def extract_text_and_images(pdf_path, marked_rectangles):
         
         # Extract text within the rectangle
         text = page.get_text("text", clip=rect_coords)
-        extracted_data[i+1] = text.strip()
+        extracted_data[i] = text.strip()
         
         # Extract image within the rectangle
         pix = page.get_pixmap(matrix=fitz.Matrix(2, 2), clip=rect_coords)
@@ -102,6 +102,18 @@ def write_data_to_file(data):
     with open(data_filepath, 'a') as f:
         f.write(json_object)
 
+@app.route('/save_rectangles', methods=['POST'])
+def save_rectangles():
+    data = request.get_json()
+
+    # Extract the rectangles data
+    rectangles = data.get('rectangles', [])
+
+    # Save the data to a file or handle it as needed
+    with open('rectangles_data.json', 'w') as f:
+        json.dump(rectangles, f, indent=4)
+
+    return jsonify({'message': 'Rectangles data saved successfully!'}), 200
 
 
 def apply_text_changes(pdf_path, marked_rectangles, text_changes):
