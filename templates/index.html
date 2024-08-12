@@ -39,6 +39,9 @@
     <form id="pdfForm" enctype="multipart/form-data">
         <label for="pdfFile">Choose a PDF file:</label>
         <input type="file" id="pdfFile" name="pdfFile" accept=".pdf" required><br><br>
+        <label for="pageNumberInput">Enter Page Number:</label>
+        <input type="number" id="pageNumberInput" min="1" required>
+        <button type="button" onclick="changePage()">Go to Page</button><br><br>
         <button type="button" onclick="extractMarkedFields()">Extract Marked Fields</button>
         <button type="button" onclick="write_to_file()">Write To File</button>
     </form>
@@ -124,24 +127,39 @@
         }
 
         function renderPage(num) {
-            pdfDoc.getPage(num).then(function(page) {
-                const viewport = page.getViewport({ scale });
+            if (num > 0 && num <= pdfDoc.numPages) {
+                pageNum = num;
+                pdfDoc.getPage(num).then(function(page) {
+                    const viewport = page.getViewport({ scale });
 
-                const canvas = document.getElementById('pdfViewer');
-                const context = canvas.getContext('2d');
-                canvas.height = viewport.height;
-                canvas.width = viewport.width;
+                    const canvas = document.getElementById('pdfViewer');
+                    const context = canvas.getContext('2d');
+                    canvas.height = viewport.height;
+                    canvas.width = viewport.width;
 
-                overlayCanvas.height = viewport.height;
-                overlayCanvas.width = viewport.width;
+                    overlayCanvas.height = viewport.height;
+                    overlayCanvas.width = viewport.width;
 
-                page.render({
-                    canvasContext: context,
-                    viewport: viewport
-                }).promise.then(() => {
-                    renderMarkedRectangle(startX, startY, currentX, currentY);
+                    page.render({
+                        canvasContext: context,
+                        viewport: viewport
+                    }).promise.then(() => {
+                        renderMarkedRectangles();
+                    });
                 });
-            });
+            } else {
+                alert("Invalid page number.");
+            }
+        }
+
+        function changePage() {
+            const pageInput = document.getElementById('pageNumberInput').value;
+            const pageNumber = parseInt(pageInput, 10);
+            if (!isNaN(pageNumber)) {
+                renderPage(pageNumber);
+            } else {
+                alert("Please enter a valid page number.");
+            }
         }
 
         function renderMarkedRectangle(startX, startY, currentX, currentY) {
@@ -149,6 +167,17 @@
             overlayContext.strokeStyle = 'red';
             overlayContext.lineWidth = 2;
             overlayContext.strokeRect(startX * scale, startY * scale, (currentX - startX) * scale, (currentY - startY) * scale);
+        }
+
+        function renderMarkedRectangles() {
+            overlayContext.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
+            markedRectangles.forEach(rect => {
+                if (rect.page + 1 === pageNum) {
+                    overlayContext.strokeStyle = 'red';
+                    overlayContext.lineWidth = 2;
+                    overlayContext.strokeRect(rect.startX * scale, rect.startY * scale, (rect.endX - rect.startX) * scale, (rect.endY - rect.startY) * scale);
+                }
+            });
         }
 
         function clearExtractedText() {
@@ -183,70 +212,65 @@
             .catch(error => console.error('Error:', error));
         }
 
-        // the format of rectangles is: {startX, startY, endX, endY, page}
-        // so when we do rectangles.forEach((rect, index) => ...), rect is an object with these properties:
-        // rect.startX, rect.startY, rect.endX, rect.endY, rect.page and index is an object with these properties: 
-
         function displayExtractedData(data, rectangles, images) {
-        const extractedTextContainer = document.getElementById('extractedTextContainer');
-        extractedTextContainer.innerHTML = '';
+            const extractedTextContainer = document.getElementById('extractedTextContainer');
+            extractedTextContainer.innerHTML = '';
 
-        rectangles.forEach((rect, index) => {
-            const div = document.createElement('div');
-            div.className = 'rectangle-info';
+            rectangles.forEach((rect, index) => {
+                const div = document.createElement('div');
+                div.className = 'rectangle-info';
 
-            const rectNameDiv = document.createElement('div');
-            rectNameDiv.id = `rectangle${index}`;
-            rectNameDiv.innerHTML = `<Strong>Rectangle ${index}</Strong>`;
+                const rectNameDiv = document.createElement('div');
+                rectNameDiv.id = `rectangle${index}`;
+                rectNameDiv.innerHTML = `<strong>Rectangle ${index}</strong>`;
 
-            const textDiv = document.createElement('div');
-            textDiv.id = `text${index}`;
-            textDiv.innerHTML = `${JSON.stringify(data[index])}`;
+                const textDiv = document.createElement('div');
+                textDiv.id = `text${index}`;
+                textDiv.innerHTML = `${JSON.stringify(data[index])}`;
 
-            const img = document.createElement('img');
-            img.src = `data:image/png;base64,${images[index]}`;
-            img.alt = 'Rectangle Image';
+                const img = document.createElement('img');
+                img.src = `data:image/png;base64,${images[index]}`;
+                img.alt = 'Rectangle Image';
 
-            const removeButton = document.createElement('button');
-            removeButton.className = 'remove-button';
-            removeButton.textContent = 'Remove';
-            removeButton.addEventListener('click', () => removeRectangle(index));
+                const removeButton = document.createElement('button');
+                removeButton.className = 'remove-button';
+                removeButton.textContent = 'Remove';
+                removeButton.addEventListener('click', () => removeRectangle(index));
 
-            const editTextButton = document.createElement('button');
-            editTextButton.className = 'edit-button';
-            editTextButton.textContent = 'Edit Text';
-            editTextButton.addEventListener('click', () => editText(index, data[index]));
+                const editTextButton = document.createElement('button');
+                editTextButton.className = 'edit-button';
+                editTextButton.textContent = 'Edit Text';
+                editTextButton.addEventListener('click', () => editText(index, data[index]));
 
-            const editNameButton = document.createElement('button');
-            editNameButton.id = `editNameBtn${index}`;
-            editNameButton.textContent = 'Edit Rectangle Name';
-            editNameButton.addEventListener('click', () => editRectangleName(index, data[index]));
+                const editNameButton = document.createElement('button');
+                editNameButton.id = `editNameBtn${index}`;
+                editNameButton.textContent = 'Edit Rectangle Name';
+                editNameButton.addEventListener('click', () => editRectangleName(index, data[index]));
 
-            // Append elements to div
-            div.appendChild(rectNameDiv);
-            div.appendChild(document.createElement('br'));
-            div.appendChild(textDiv);
-            div.appendChild(document.createElement('br'));
-            div.appendChild(img);
-            div.appendChild(document.createElement('br'));
-            div.appendChild(removeButton);
-            div.appendChild(editTextButton);
-            div.appendChild(editNameButton);
+                // Append elements to div
+                div.appendChild(rectNameDiv);
+                div.appendChild(document.createElement('br'));
+                div.appendChild(textDiv);
+                div.appendChild(document.createElement('br'));
+                div.appendChild(img);
+                div.appendChild(document.createElement('br'));
+                div.appendChild(removeButton);
+                div.appendChild(editTextButton);
+                div.appendChild(editNameButton);
 
-            // Append the div to the container
-            extractedTextContainer.appendChild(div);
-        });
-    }
-
+                // Append the div to the container
+                extractedTextContainer.appendChild(div);
+            });
+        }
 
         function removeRectangle(index) {
-            markedRectangles.splice(index, 0);
+            markedRectangles.splice(index, 1);
             extractMarkedFields();
         }
 
         function editText(index, currentText) {
             const textElement = document.getElementById(`text${index}`);
-            const editButton = document.querySelector(`.edit-button:nth-of-type(${index})`);
+            const editButton = document.querySelector(`.edit-button:nth-of-type(${index + 1})`);
             editButton.style.display = 'none';
 
             const updateButton = document.createElement('button');
@@ -281,70 +305,62 @@
             rectDiv.appendChild(saveButton);
         }
 
+        function saveRectangleName(index) { 
+            // Get the new rectangle name from the input box
+            const newName = document.getElementById(`edit-name-${index}`).value;
 
-    function saveRectangleName(index) { 
-        // Get the new rectangle name from the input box
-        const newName = document.getElementById(`edit-name-${index}`).value;
+            // Update the rectangle name in the DOM
+            const rectDiv = document.getElementById(`rectangle${index}`);
+            rectDiv.innerHTML = `<strong>${newName}</strong>`;
 
-        // Update the rectangle name in the DOM
-        const rectDiv = document.getElementById(`rectangle${index}`);
-        rectDiv.innerHTML = `<Strong>${newName}</Strong>`;
-
-        // Optionally: Update any related data structures here
-    }
-
+            // Optionally: Update any related data structures here
+        }
 
         function write_to_file() {
-    // Initialize an array to hold the rectangle data
-    const rectanglesData = [];
+            // Initialize an array to hold the rectangle data
+            const rectanglesData = [];
 
-    // Iterate over each rectangle and collect its name and text
-    markedRectangles.forEach((rect, index) => {
-        // Get the rectangle name from the DOM
-        const rectNameElement = document.getElementById(`rectangle${index}`);
-        const rectName = rectNameElement.querySelector('strong').textContent;
+            // Iterate over each rectangle and collect its name and text
+            markedRectangles.forEach((rect, index) => {
+                // Get the rectangle name from the DOM
+                const rectNameElement = document.getElementById(`rectangle${index}`);
+                const rectName = rectNameElement.querySelector('strong').textContent;
 
-        // Get the extracted text from the DOM
-        const rectTextElement = document.getElementById(`text${index}`);
-        const rectText = rectTextElement.querySelector('textarea') ? 
-            rectTextElement.querySelector('textarea').value : 
-            JSON.parse(rectTextElement.textContent);
+                // Get the extracted text from the DOM
+                const rectTextElement = document.getElementById(`text${index}`);
+                const rectText = rectTextElement.querySelector('textarea') ? 
+                    rectTextElement.querySelector('textarea').value : 
+                    JSON.parse(rectTextElement.textContent);
 
-        // Add the rectangle data to the array
-        rectanglesData.push({
-            name: rectName,
-            text: rectText
-        });
-    });
+                // Add the rectangle data to the array
+                rectanglesData.push({
+                    name: rectName,
+                    text: rectText
+                });
+            });
 
-    // Prepare the data to be sent to the backend
-    const dataToSend = {
-        rectangles: rectanglesData
-    };
+            // Prepare the data to be sent to the backend
+            const dataToSend = {
+                rectangles: rectanglesData
+            };
 
-    // Send the data to the backend using a POST request
-    fetch('/save_rectangles', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(dataToSend)
-    })
-    .then(response => response.json())
-    .then(data => {
-        console.log('Success:', data);
-        alert('Rectangles data saved successfully!');
-    })
-    .catch(error => {
-        console.error('Error:', error);
-    });
-}
-
-
-    // function updateText(index, currentText) {
-    //     markedRectangles[index].text = document.querySelector(`#text${index} textarea`).value;
-    //     extractMarkedFields();
-    // }
+            // Send the data to the backend using a POST request
+            fetch('/save_rectangles', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(dataToSend)
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('Success:', data);
+                alert('Rectangles data saved successfully!');
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+        }
     </script>
 </body>
 </html>
