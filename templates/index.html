@@ -8,15 +8,15 @@
         #pdfViewerContainer {
             position: relative;
             width: 100%;
-            height: 800px;
         }
-        #pdfViewer, #pdfOverlay {
+        .pdfPage {
+            position: relative;
+            margin-bottom: 20px;
+        }
+        .pdfCanvas, .pdfOverlay {
             position: absolute;
             top: 0;
             left: 0;
-        }
-        #pdfOverlay {
-            z-index: 1;
         }
         .rectangle-info {
             border: 1px solid #000;
@@ -39,9 +39,6 @@
     <form id="pdfForm" enctype="multipart/form-data">
         <label for="pdfFile">Choose a PDF file:</label>
         <input type="file" id="pdfFile" name="pdfFile" accept=".pdf" required><br><br>
-        <label for="pageNumberInput">Enter Page Number:</label>
-        <input type="number" id="pageNumberInput" min="1" required>
-        <button type="button" onclick="changePage()">Go to Page</button><br><br>
         <button type="button" onclick="extractMarkedFields()">Extract Marked Fields</button>
         <button type="button" onclick="write_to_file()">Write To File</button>
     </form>
@@ -50,10 +47,7 @@
     <div id="extractedTextContainer"></div>
 
     <h2>PDF Viewer:</h2>
-    <div id="pdfViewerContainer">
-        <canvas id="pdfViewer"></canvas>
-        <canvas id="pdfOverlay"></canvas>
-    </div>
+    <div id="pdfViewerContainer"></div>
 
     <h2>Edit Text in Rectangles:</h2>
     <div id="editTextContainer"></div>
@@ -64,48 +58,12 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.11.338/pdf.min.js"></script>
     <script>
         let pdfDoc = null;
-        let pageNum = 1;
         let markedRectangles = [];
         let isDrawing = false;
         let startX, startY, currentX, currentY;
         const scale = 1.5;
 
         document.getElementById('pdfFile').addEventListener('change', handleFileSelect, false);
-
-        const overlayCanvas = document.getElementById('pdfOverlay');
-        const overlayContext = overlayCanvas.getContext('2d');
-
-        overlayCanvas.addEventListener('mousedown', function(e) {
-            if (isDrawing) return;
-            isDrawing = true;
-            const rect = overlayCanvas.getBoundingClientRect();
-            startX = (e.clientX - rect.left) / scale;
-            startY = (e.clientY - rect.top) / scale;
-            currentX = startX;
-            currentY = startY;
-            clearExtractedText();
-        });
-
-        overlayCanvas.addEventListener('mousemove', function(e) {
-            if (!isDrawing) return;
-            const rect = overlayCanvas.getBoundingClientRect();
-            currentX = (e.clientX - rect.left) / scale;
-            currentY = (e.clientY - rect.top) / scale;
-            overlayContext.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
-            renderMarkedRectangle(startX, startY, currentX, currentY);
-        });
-
-        overlayCanvas.addEventListener('mouseup', function(e) {
-            if (!isDrawing) return;
-            isDrawing = false;
-            const rect = overlayCanvas.getBoundingClientRect();
-            currentX = (e.clientX - rect.left) / scale;
-            currentY = (e.clientY - rect.top) / scale;
-            const newRectangle = normalizeRectangle(startX, startY, currentX, currentY);
-            markedRectangles.push(newRectangle);
-            renderMarkedRectangle(newRectangle.startX, newRectangle.startY, newRectangle.endX, newRectangle.endY);
-            extractMarkedFields();
-        });
 
         function handleFileSelect(evt) {
             const file = evt.target.files[0];
@@ -122,70 +80,84 @@
         function renderPDF(data) {
             pdfjsLib.getDocument(data).promise.then(function(pdf) {
                 pdfDoc = pdf;
-                renderPage(pageNum);
-            });
-        }
-
-        function renderPage(num) {
-            if (num > 0 && num <= pdfDoc.numPages) {
-                pageNum = num;
-                pdfDoc.getPage(num).then(function(page) {
-                    const viewport = page.getViewport({ scale });
-
-                    const canvas = document.getElementById('pdfViewer');
-                    const context = canvas.getContext('2d');
-                    canvas.height = viewport.height;
-                    canvas.width = viewport.width;
-
-                    overlayCanvas.height = viewport.height;
-                    overlayCanvas.width = viewport.width;
-
-                    page.render({
-                        canvasContext: context,
-                        viewport: viewport
-                    }).promise.then(() => {
-                        renderMarkedRectangles();
-                    });
-                });
-            } else {
-                alert("Invalid page number.");
-            }
-        }
-
-        function changePage() {
-            const pageInput = document.getElementById('pageNumberInput').value;
-            const pageNumber = parseInt(pageInput, 10);
-            if (!isNaN(pageNumber)) {
-                renderPage(pageNumber);
-            } else {
-                alert("Please enter a valid page number.");
-            }
-        }
-
-        function renderMarkedRectangle(startX, startY, currentX, currentY) {
-            overlayContext.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
-            overlayContext.strokeStyle = 'red';
-            overlayContext.lineWidth = 2;
-            overlayContext.strokeRect(startX * scale, startY * scale, (currentX - startX) * scale, (currentY - startY) * scale);
-        }
-
-        function renderMarkedRectangles() {
-            overlayContext.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
-            markedRectangles.forEach(rect => {
-                if (rect.page + 1 === pageNum) {
-                    overlayContext.strokeStyle = 'red';
-                    overlayContext.lineWidth = 2;
-                    overlayContext.strokeRect(rect.startX * scale, rect.startY * scale, (rect.endX - rect.startX) * scale, (rect.endY - rect.startY) * scale);
+                for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+                    renderPage(pageNum);
                 }
             });
         }
 
-        function clearExtractedText() {
-            const extractedTextContainer = document.getElementById('extractedTextContainer');
-            extractedTextContainer.innerHTML = '';
+        function renderPage(num) {
+            pdfDoc.getPage(num).then(function(page) {
+                const viewport = page.getViewport({ scale });
+
+                const pageContainer = document.createElement('div');
+                pageContainer.className = 'pdfPage';
+                pageContainer.style.height = `${viewport.height}px`;
+                pageContainer.style.width = `${viewport.width}px`;
+
+                const canvas = document.createElement('canvas');
+                canvas.className = 'pdfCanvas';
+                const context = canvas.getContext('2d');
+                canvas.height = viewport.height;
+                canvas.width = viewport.width;
+
+                const overlayCanvas = document.createElement('canvas');
+                overlayCanvas.className = 'pdfOverlay';
+                overlayCanvas.height = viewport.height;
+                overlayCanvas.width = viewport.width;
+                const overlayContext = overlayCanvas.getContext('2d');
+
+                pageContainer.appendChild(canvas);
+                pageContainer.appendChild(overlayCanvas);
+                document.getElementById('pdfViewerContainer').appendChild(pageContainer);
+
+                page.render({
+                    canvasContext: context,
+                    viewport: viewport
+                }).promise.then(() => {
+                    overlayCanvas.addEventListener('mousedown', function(e) {
+                        if (isDrawing) return;
+                        isDrawing = true;
+                        const rect = overlayCanvas.getBoundingClientRect();
+                        startX = (e.clientX - rect.left) / scale;
+                        startY = (e.clientY - rect.top) / scale;
+                        currentX = startX;
+                        currentY = startY;
+                        clearExtractedText();
+                    });
+
+                    overlayCanvas.addEventListener('mousemove', function(e) {
+                        if (!isDrawing) return;
+                        const rect = overlayCanvas.getBoundingClientRect();
+                        currentX = (e.clientX - rect.left) / scale;
+                        currentY = (e.clientY - rect.top) / scale;
+                        overlayContext.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
+                        renderMarkedRectangle(overlayContext, startX, startY, currentX, currentY);
+                    });
+
+                    overlayCanvas.addEventListener('mouseup', function(e) {
+                        if (!isDrawing) return;
+                        isDrawing = false;
+                        const rect = overlayCanvas.getBoundingClientRect();
+                        currentX = (e.clientX - rect.left) / scale;
+                        currentY = (e.clientY - rect.top) / scale;
+                        const newRectangle = normalizeRectangle(startX, startY, currentX, currentY, num);
+                        markedRectangles.push(newRectangle);
+                        renderMarkedRectangle(overlayContext, newRectangle.startX, newRectangle.startY, newRectangle.endX, newRectangle.endY);
+                        extractMarkedFields();
+                    });
+                });
+            });
         }
 
-        function normalizeRectangle(x1, y1, x2, y2) {
+        function renderMarkedRectangle(ctx, startX, startY, currentX, currentY) {
+            ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+            ctx.strokeStyle = 'red';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(startX * scale, startY * scale, (currentX - startX) * scale, (currentY - startY) * scale);
+        }
+
+        function normalizeRectangle(x1, y1, x2, y2, pageNum) {
             return {
                 startX: Math.min(x1, x2),
                 startY: Math.min(y1, y2),
@@ -193,6 +165,11 @@
                 endY: Math.max(y1, y2),
                 page: pageNum - 1
             };
+        }
+
+        function clearExtractedText() {
+            const extractedTextContainer = document.getElementById('extractedTextContainer');
+            extractedTextContainer.innerHTML = '';
         }
 
         function extractMarkedFields() {
@@ -247,7 +224,6 @@
                 editNameButton.textContent = 'Edit Rectangle Name';
                 editNameButton.addEventListener('click', () => editRectangleName(index, data[index]));
 
-                // Append elements to div
                 div.appendChild(rectNameDiv);
                 div.appendChild(document.createElement('br'));
                 div.appendChild(textDiv);
@@ -258,7 +234,6 @@
                 div.appendChild(editTextButton);
                 div.appendChild(editNameButton);
 
-                // Append the div to the container
                 extractedTextContainer.appendChild(div);
             });
         }
@@ -269,97 +244,49 @@
         }
 
         function editText(index, currentText) {
-            const textElement = document.getElementById(`text${index}`);
-            const editButton = document.querySelector(`.edit-button:nth-of-type(${index + 1})`);
-            editButton.style.display = 'none';
+
+
+            const textDiv = document.getElementById(`text${index}`);
+            textDiv.innerHTML = '';
+
+            const textarea = document.createElement('textarea');
+            textarea.className = 'edit-input';
+            textarea.value = currentText;
 
             const updateButton = document.createElement('button');
             updateButton.className = 'update-button';
-            updateButton.textContent = 'Update Text';
-            updateButton.onclick = () => updateText(index, textElement.textContent);
-            textElement.innerHTML = '';
-            const editInput = document.createElement('textarea');
-            editInput.className = 'edit-input';
-            editInput.value = currentText;
-            textElement.appendChild(editInput);
-            textElement.appendChild(updateButton);
-        }
-
-        function editRectangleName(index, currentName) {
-            const rectDiv = document.getElementById(`rectangle${index}`);
-
-            rectDiv.innerHTML = ''; // Clear the current content
-
-            const inputBox = document.createElement('input');
-            inputBox.type = 'text';
-            inputBox.value = `Rectangle ${index}`;
-            inputBox.id = `edit-name-${index}`;
-
-            const saveButton = document.createElement('button');
-            saveButton.textContent = 'Save';
-            saveButton.onclick = function() {
-                saveRectangleName(index);
-            };
-
-            rectDiv.appendChild(inputBox);
-            rectDiv.appendChild(saveButton);
-        }
-
-        function saveRectangleName(index) { 
-            // Get the new rectangle name from the input box
-            const newName = document.getElementById(`edit-name-${index}`).value;
-
-            // Update the rectangle name in the DOM
-            const rectDiv = document.getElementById(`rectangle${index}`);
-            rectDiv.innerHTML = `<strong>${newName}</strong>`;
-
-            // Optionally: Update any related data structures here
-        }
-
-        function write_to_file() {
-            // Initialize an array to hold the rectangle data
-            const rectanglesData = [];
-
-            // Iterate over each rectangle and collect its name and text
-            markedRectangles.forEach((rect, index) => {
-                // Get the rectangle name from the DOM
-                const rectNameElement = document.getElementById(`rectangle${index}`);
-                const rectName = rectNameElement.querySelector('strong').textContent;
-
-                // Get the extracted text from the DOM
-                const rectTextElement = document.getElementById(`text${index}`);
-                const rectText = rectTextElement.querySelector('textarea') ? 
-                    rectTextElement.querySelector('textarea').value : 
-                    JSON.parse(rectTextElement.textContent);
-
-                // Add the rectangle data to the array
-                rectanglesData.push({
-                    name: rectName,
-                    text: rectText
-                });
+            updateButton.textContent = 'Update';
+            updateButton.addEventListener('click', () => {
+                const updatedText = textarea.value;
+                textDiv.textContent = updatedText;
+                textDiv.appendChild(updateButton);
             });
 
-            // Prepare the data to be sent to the backend
-            const dataToSend = {
-                rectangles: rectanglesData
-            };
+            textDiv.appendChild(textarea);
+            textDiv.appendChild(document.createElement('br'));
+            textDiv.appendChild(updateButton);
+        }
 
-            // Send the data to the backend using a POST request
-            fetch('/save_rectangles', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(dataToSend)
-            })
-            .then(response => response.json())
-            .then(data => {
-                console.log('Success:', data);
-                alert('Rectangles data saved successfully!');
-            })
-            .catch(error => {
-                console.error('Error:', error);
+        function editRectangleName(index, currentText) {
+            const rectNameDiv = document.getElementById(`rectangle${index}`);
+            rectNameDiv.innerHTML = '';
+
+            const textarea = document.createElement('textarea');
+            textarea.className = 'edit-input';
+            textarea.value = currentText;
+
+            const updateButton = document.createElement('button');
+            updateButton.className = 'update-button';
+            updateButton.textContent = 'Update';
+            updateButton.addEventListener('click', () => {
+                const updatedText = textarea.value;
+                rectNameDiv.textContent = updatedText;
+                rectNameDiv.appendChild(updateButton);
             });
+
+            rectNameDiv.appendChild(textarea);
+            rectNameDiv.appendChild(document.createElement('br'));
+            rectNameDiv.appendChild(updateButton);
         }
     </script>
 </body>
