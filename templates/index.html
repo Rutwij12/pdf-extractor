@@ -244,8 +244,6 @@
         }
 
         function editText(index, currentText) {
-
-
             const textDiv = document.getElementById(`text${index}`);
             textDiv.innerHTML = '';
 
@@ -259,7 +257,7 @@
             updateButton.addEventListener('click', () => {
                 const updatedText = textarea.value;
                 textDiv.textContent = updatedText;
-                textDiv.appendChild(updateButton);
+                markedRectangles[index].updatedText = updatedText; // Save the updated text to the corresponding rectangle
             });
 
             textDiv.appendChild(textarea);
@@ -281,12 +279,27 @@
             updateButton.addEventListener('click', () => {
                 const updatedText = textarea.value;
                 rectNameDiv.textContent = updatedText;
-                rectNameDiv.appendChild(updateButton);
+                markedRectangles[index].updatedName = updatedText; // Save the updated name to the corresponding rectangle
             });
 
             rectNameDiv.appendChild(textarea);
             rectNameDiv.appendChild(document.createElement('br'));
             rectNameDiv.appendChild(updateButton);
+        }
+
+        function write_to_file() {
+            fetch('/save_rectangles', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ rectangles: markedRectangles }), // Send updated rectangles
+            })
+            .then(response => response.json())
+            .then(data => {
+                alert(data.message);
+            })
+            .catch(error => console.error('Error:', error));
         }
     </script>
 </body>

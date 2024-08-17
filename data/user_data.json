@@ -1,18 +1,19 @@
 [
     {
-        "name": "Rectangle 0",
-        "text": "Rutwij Patel"
+        "startX": 67.33333333333333,
+        "startY": 32.59166463216146,
+        "endX": 184,
+        "endY": 68.59166463216145,
+        "page": 1,
+        "updatedName": "User Content",
+        "updatedText": "Rutwij Patel \nImperial College London!"
     },
     {
-        "name": "Rectangle 1",
-        "text": "Imperial College London"
-    },
-    {
-        "name": "Rectangle 2",
-        "text": "Pintos Task 0"
-    },
-    {
-        "name": "Rectangle 3",
-        "text": "The default length of a scheduler time slice is 100 ticks per second. There are 4 ticks per time \nslice, so each scheduler time slice is 0.04 seconds long."
+        "startX": 62,
+        "startY": 76.18332926432292,
+        "endX": 222,
+        "endY": 126.39166259765625,
+        "page": 0,
+        "updatedName": "Pintos Task 0!"
     }
 ]
