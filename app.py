@@ -6,11 +6,17 @@ import json
 import base64
 from io import BytesIO
 from PIL import Image, ImageDraw, ImageFont
+from img2table.document import PDF
+from img2table.ocr import TesseractOCR
 
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = 'uploads'
 app.config['ALLOWED_EXTENSIONS'] = {'pdf'}
 app.config['DATA_FOLDER'] = 'data'
+app.config['EXCEL_FOLDER'] = 'excel_files'
+
+if not os.path.exists(app.config['EXCEL_FOLDER']):
+    os.makedirs(app.config['EXCEL_FOLDER'])
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in app.config['ALLOWED_EXTENSIONS']
@@ -92,6 +98,30 @@ def extract_text_and_images(pdf_path, marked_rectangles):
     # rect_images is a list of base64 encoded images extracted from each rectangle in the format of:
     # ['base64_encoded_image_1', 'base64_encoded_image_2', ...]
     return extracted_data, marked_rectangles, rect_images
+
+@app.route('/extract_tables', methods=['POST'])
+def extract_tables():
+    if 'pdfFile' not in request.files:
+        return jsonify({'error': 'No file uploaded!'}), 400
+
+    pdf_file = request.files['pdfFile']
+    pdf_filename = secure_filename(pdf_file.filename)
+    pdf_path = os.path.join(app.config['UPLOAD_FOLDER'], pdf_filename)
+    pdf_file.save(pdf_path)
+
+    try:
+        # Use Tesseract OCR to extract tables from PDF
+        ocr = TesseractOCR(n_threads=1, lang="eng")
+        doc = PDF(pdf_path)
+
+        # Save the extracted tables to an Excel file
+        excel_filename = f"{os.path.splitext(pdf_filename)[0]}_tables.xlsx"
+        excel_path = os.path.join(app.config['EXCEL_FOLDER'], excel_filename)
+        doc.to_xlsx(dest=excel_path, ocr=ocr, implicit_rows=False, implicit_columns=False, borderless_tables=False, min_confidence=50)
+
+        return jsonify({'message': 'Tables extracted successfully!', 'filePath': excel_path}), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/save_rectangles', methods=['POST'])
 def save_rectangles():

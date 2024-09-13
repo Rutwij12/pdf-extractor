@@ -41,6 +41,7 @@
         <input type="file" id="pdfFile" name="pdfFile" accept=".pdf" required><br><br>
         <button type="button" onclick="extractMarkedFields()">Extract Marked Fields</button>
         <button type="button" onclick="write_to_file()">Write To File</button>
+        <button type="button" onclick="extractTables()">Extract Tables to Excel</button>
     </form>
 
     <h2>Extracted Text and Rectangles:</h2>
@@ -64,6 +65,31 @@
         const scale = 1.5;
 
         document.getElementById('pdfFile').addEventListener('change', handleFileSelect, false);
+
+        function extractTables() {
+    const pdfFile = document.getElementById('pdfFile').files[0];
+    if (!pdfFile) {
+        alert('Please select a PDF file first!');
+        return;
+    }
+
+    const formData = new FormData();
+    formData.append('pdfFile', pdfFile);
+
+    fetch('/extract_tables', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.error) {
+            alert('Error: ' + data.error);
+        } else {
+            alert('Tables extracted and saved as Excel file on the server!');
+        }
+    })
+    .catch(error => console.error('Error:', error));
+}
 
         function handleFileSelect(evt) {
             const file = evt.target.files[0];
