@@ -67,11 +67,11 @@
         document.getElementById('pdfFile').addEventListener('change', handleFileSelect, false);
 
         function extractTables() {
-    const pdfFile = document.getElementById('pdfFile').files[0];
-    if (!pdfFile) {
-        alert('Please select a PDF file first!');
-        return;
-    }
+            const pdfFile = document.getElementById('pdfFile').files[0];
+            if (!pdfFile) {
+                alert('Please select a PDF file first!');
+                return;
+            }
 
     const formData = new FormData();
     formData.append('pdfFile', pdfFile);
@@ -85,7 +85,7 @@
         if (data.error) {
             alert('Error: ' + data.error);
         } else {
-            alert('Tables extracted and saved as Excel file on the server!');
+            alert('Tables extracted and saved on the server!');
         }
     })
     .catch(error => console.error('Error:', error));

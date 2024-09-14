@@ -13,10 +13,6 @@ app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = 'uploads'
 app.config['ALLOWED_EXTENSIONS'] = {'pdf'}
 app.config['DATA_FOLDER'] = 'data'
-app.config['EXCEL_FOLDER'] = 'excel_files'
-
-if not os.path.exists(app.config['EXCEL_FOLDER']):
-    os.makedirs(app.config['EXCEL_FOLDER'])
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in app.config['ALLOWED_EXTENSIONS']
@@ -114,14 +110,35 @@ def extract_tables():
         ocr = TesseractOCR(n_threads=1, lang="eng")
         doc = PDF(pdf_path)
 
-        # Save the extracted tables to an Excel file
-        excel_filename = f"{os.path.splitext(pdf_filename)[0]}_tables.xlsx"
-        excel_path = os.path.join(app.config['EXCEL_FOLDER'], excel_filename)
-        doc.to_xlsx(dest=excel_path, ocr=ocr, implicit_rows=False, implicit_columns=False, borderless_tables=False, min_confidence=50)
+        extracted_tables = doc.extract_tables(ocr=ocr,
+                                      implicit_rows=False,
+                                      implicit_columns=False,
+                                      borderless_tables=False,
+                                      min_confidence=50)
+        print(extracted_tables)
+        
+        serializable_data = {}
+        for page_number, tables in extracted_tables.items():
+            serializable_data[page_number] = []
 
-        return jsonify({'message': 'Tables extracted successfully!', 'filePath': excel_path}), 200
+            for table in tables: 
+                table_data = {
+                    "title" : table.title, 
+                    "content": table.df.to_dict(orient="split")
+                }
+
+            serializable_data[page_number].append(table_data)
+        
+        # Save the serializable data to a JSON file
+        json_filename = "extracted_tables.json"
+        with open(json_filename, "w") as json_file:
+            json.dump(serializable_data, json_file, indent=4)
+
+
+        return jsonify({'message': 'Tables extracted successfully!', 'filePath': json_filename}), 200
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+        
 
 @app.route('/save_rectangles', methods=['POST'])
 def save_rectangles():
