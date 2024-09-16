@@ -110,32 +110,34 @@ def extract_tables():
         ocr = TesseractOCR(n_threads=1, lang="eng")
         doc = PDF(pdf_path)
 
-        extracted_tables = doc.extract_tables(ocr=ocr,
-                                      implicit_rows=False,
-                                      implicit_columns=False,
-                                      borderless_tables=False,
-                                      min_confidence=50)
-        print(extracted_tables)
+        extracted_tables = doc.extract_tables(
+            ocr=ocr,
+            implicit_rows=False,
+            implicit_columns=False,
+            borderless_tables=False,
+            min_confidence=50
+        )
         
         serializable_data = {}
         for page_number, tables in extracted_tables.items():
             serializable_data[page_number] = []
 
-            for table in tables: 
+            for table in tables:
                 table_data = {
-                    "title" : table.title, 
+                    "title": table.title, 
                     "content": table.df.to_dict(orient="split")
                 }
-
-            serializable_data[page_number].append(table_data)
+                serializable_data[page_number].append(table_data)
         
-        # Save the serializable data to a JSON file
-        json_filename = "extracted_tables.json"
+        # Save the serializable data to a JSON file (if needed)
+        json_filename = os.path.join(app.config['UPLOAD_FOLDER'], "extracted_tables.json")
         with open(json_filename, "w") as json_file:
             json.dump(serializable_data, json_file, indent=4)
 
+        # Return JSON data to client
+        return jsonify({'message': 'Tables extracted successfully!', 'data': serializable_data}), 200
+        
 
-        return jsonify({'message': 'Tables extracted successfully!', 'filePath': json_filename}), 200
     except Exception as e:
         return jsonify({'error': str(e)}), 500
         

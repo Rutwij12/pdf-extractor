@@ -56,6 +56,9 @@
     <h2>Updated PDF:</h2>
     <div id="updatedPdfContainer"></div>
 
+    <h2>Extracted Tables:</h2>
+    <div id="output"></div>
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.11.338/pdf.min.js"></script>
     <script>
         let pdfDoc = null;
@@ -73,23 +76,147 @@
                 return;
             }
 
-    const formData = new FormData();
-    formData.append('pdfFile', pdfFile);
+            const formData = new FormData();
+            formData.append('pdfFile', pdfFile);
 
-    fetch('/extract_tables', {
-        method: 'POST',
-        body: formData
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.error) {
-            alert('Error: ' + data.error);
-        } else {
-            alert('Tables extracted and saved on the server!');
+            fetch('/extract_tables', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    alert('Error: ' + data.error);
+                } else {
+                    alert('Tables extracted and saved on the server!');
+                    displayTables(data.data);
+                }
+            })
+            .catch(error => console.error('Error:', error));
         }
-    })
-    .catch(error => console.error('Error:', error));
+
+function displayTables(data) {
+    const outputDiv = document.getElementById('output');
+    outputDiv.innerHTML = '';  // Clear previous content
+
+    for (const [page, tables] of Object.entries(data)) {
+        tables.forEach((table, index) => {
+            // Create a container for each table
+            const tableContainer = document.createElement('div');
+            tableContainer.classList.add('table-container');
+
+            // Create a subtitle with an update button
+            const subtitle = document.createElement('h3');
+            subtitle.innerHTML = `Page ${page} - Extracted Table ${index + 1}`;
+            subtitle.id = `subtitle-${page}-${index}`;
+
+            const updateButton = document.createElement('button');
+            updateButton.textContent = 'Update';
+            updateButton.addEventListener('click', () => updateSubtitle(page, index));
+
+            subtitle.appendChild(updateButton);
+            tableContainer.appendChild(subtitle);
+
+            // Create a table element to display the content
+            const tableElement = document.createElement('table');
+            tableElement.border = '1';
+            tableElement.id = `table-${page}-${index}`;
+
+            // Get table content
+            const tableContent = table.content;
+
+            // Create table headers (first row)
+            const headerRow = document.createElement('tr');
+            tableContent.columns.forEach((column, colIndex) => {
+                const headerCell = document.createElement('th');
+
+                if (colIndex != 0) {
+
+                    // Add delete button to every header cell
+                    const deleteButton = document.createElement('button');
+                    deleteButton.textContent = 'X';
+                    deleteButton.style.marginLeft = '5px';
+                    deleteButton.addEventListener('click', () => deleteColumn(tableElement, colIndex));
+
+                    headerCell.textContent = column;
+                    headerCell.appendChild(deleteButton);
+                }
+                headerRow.appendChild(headerCell);
+
+            });
+
+            tableElement.appendChild(headerRow);
+
+            // Create table rows
+            tableContent.data.forEach((row, rowIndex) => {
+                const rowElement = document.createElement('tr');
+
+                row.forEach((cell, colIndex) => {
+                    const cellElement = document.createElement('td');
+                    cellElement.textContent = cell;
+
+                    // Add delete button to every cell in the first column
+                    if (colIndex === 0) {
+                        const deleteButton = document.createElement('button');
+                        deleteButton.textContent = 'X';
+                        deleteButton.style.marginLeft = '5px';
+                        deleteButton.addEventListener('click', () => deleteRow(tableElement, rowIndex));
+                        cellElement.appendChild(deleteButton);
+                    }
+
+                    rowElement.appendChild(cellElement);
+                });
+
+                tableElement.appendChild(rowElement);
+            });
+
+            // Append table to container
+            tableContainer.appendChild(tableElement);
+            outputDiv.appendChild(tableContainer);
+        });
+    }
 }
+
+function deleteRow(tableElement, rowIndex) {
+    // Delete the specified row from the table
+    tableElement.deleteRow(rowIndex + 1); // Adjusting index for the header row
+}
+
+function deleteColumn(tableElement, colIndex) {
+    // Iterate through each row to delete the specified column
+    for (let i = 0; i < tableElement.rows.length; i++) {
+        tableElement.rows[i].deleteCell(colIndex);
+    }
+}
+
+function updateSubtitle(page, index) {
+    const subtitleElement = document.getElementById(`subtitle-${page}-${index}`);
+    
+    // Create an input field for updating the subtitle
+    const inputField = document.createElement('input');
+    inputField.type = 'text';
+    inputField.value = subtitleElement.textContent.replace('Update', '').trim(); // Remove 'Update' from the original subtitle
+    
+    // Create a button to save the updated subtitle
+    const saveButton = document.createElement('button');
+    saveButton.textContent = 'Save';
+    saveButton.addEventListener('click', () => {
+        // Update the subtitle
+        subtitleElement.innerHTML = `${inputField.value} `;
+
+        // Recreate and append the "Update" button
+        const updateButton = document.createElement('button');
+        updateButton.textContent = 'Update';
+        updateButton.addEventListener('click', () => updateSubtitle(page, index));
+        subtitleElement.appendChild(updateButton);
+    });
+    
+    // Replace the subtitle text with the input field and save button
+    subtitleElement.innerHTML = ''; // Clear the current subtitle
+    subtitleElement.appendChild(inputField);
+    subtitleElement.appendChild(saveButton);
+}
+
 
         function handleFileSelect(evt) {
             const file = evt.target.files[0];
