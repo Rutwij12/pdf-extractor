@@ -1,19 +1,9 @@
 [
     {
-        "startX": 67.33333333333333,
-        "startY": 32.59166463216146,
-        "endX": 184,
-        "endY": 68.59166463216145,
-        "page": 1,
-        "updatedName": "User Content",
-        "updatedText": "Rutwij Patel \nImperial College London!"
-    },
-    {
-        "startX": 62,
-        "startY": 76.18332926432292,
-        "endX": 222,
-        "endY": 126.39166259765625,
-        "page": 0,
-        "updatedName": "Pintos Task 0!"
+        "startX": 208,
+        "startY": 16.629628499348957,
+        "endX": 412.6666666666667,
+        "endY": 93.9629618326823,
+        "page": 0
     }
 ]

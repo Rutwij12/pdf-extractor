@@ -105,6 +105,8 @@ def extract_tables():
     pdf_path = os.path.join(app.config['UPLOAD_FOLDER'], pdf_filename)
     pdf_file.save(pdf_path)
 
+    is_bordered = request.form.get('isBordered', 'false').lower() == 'true'
+
     try:
         # Use Tesseract OCR to extract tables from PDF
         ocr = TesseractOCR(n_threads=1, lang="eng")
@@ -112,9 +114,9 @@ def extract_tables():
 
         extracted_tables = doc.extract_tables(
             ocr=ocr,
-            implicit_rows=False,
-            implicit_columns=False,
-            borderless_tables=False,
+            implicit_rows=not is_bordered,
+            implicit_columns=not is_bordered,
+            borderless_tables=not is_bordered,
             min_confidence=50
         )
         
