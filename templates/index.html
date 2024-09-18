@@ -4,35 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PDF Annotation and Extraction</title>
-    <style>
-        #pdfViewerContainer {
-            position: relative;
-            width: 100%;
-        }
-        .pdfPage {
-            position: relative;
-            margin-bottom: 20px;
-        }
-        .pdfCanvas, .pdfOverlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-        }
-        .rectangle-info {
-            border: 1px solid #000;
-            padding: 10px;
-            margin: 10px 0;
-        }
-        .remove-button, .edit-button, .update-button {
-            margin-left: 10px;
-            cursor: pointer;
-            color: red;
-        }
-        .edit-input {
-            width: 300px;
-            margin-bottom: 10px;
-        }
-    </style>
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
     <h1>PDF Annotation and Extraction</h1>
@@ -47,14 +19,6 @@
     <div id="extractedTextContainer"></div>
 
     <div id="pdfViewerContainer"></div>
-
-    <!-- <h2>Edit Text in Rectangles:</h2>
-    <div id="editTextContainer"></div> -->
-
-    <!-- <h2>Updated PDF:</h2>
-    <div id="updatedPdfContainer"></div> -->
-
-    <!-- <h2>Extracted Tables:</h2> -->
     <div id="output"></div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.11.338/pdf.min.js"></script>

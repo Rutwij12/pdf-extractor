@@ -1,0 +1,27 @@
+#pdfViewerContainer {
+    position: relative;
+    width: 100%;
+}
+.pdfPage {
+    position: relative;
+    margin-bottom: 20px;
+}
+.pdfCanvas, .pdfOverlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+}
+.rectangle-info {
+    border: 1px solid #000;
+    padding: 10px;
+    margin: 10px 0;
+}
+.remove-button, .edit-button, .update-button {
+    margin-left: 10px;
+    cursor: pointer;
+    color: red;
+}
+.edit-input {
+    width: 300px;
+    margin-bottom: 10px;
+}
