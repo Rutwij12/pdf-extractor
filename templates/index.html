@@ -93,20 +93,34 @@
             })
             .catch(error => console.error('Error:', error));
         }
+// Add this to your global scope
+let tableData = {};
 
+// Update the displayTables function
 function displayTables(data) {
     const outputDiv = document.getElementById('output');
     outputDiv.innerHTML = '<h2>Extracted Tables:</h2>';  // Clear previous content
 
     for (const [page, tables] of Object.entries(data)) {
         tables.forEach((table, index) => {
+            // Initialize table metadata for tracking changes
+            if (!tableData[page]) {
+                tableData[page] = {};
+            }
+            tableData[page][index] = {
+                title: `Page ${page} - Extracted Table ${index + 1}`,
+                deletedRows: [],
+                deletedColumns: [],
+                content: table.content,
+            };
+
             // Create a container for each table
             const tableContainer = document.createElement('div');
             tableContainer.classList.add('table-container');
 
             // Create a subtitle with an update button
             const subtitle = document.createElement('h3');
-            subtitle.innerHTML = `Page ${page} - Extracted Table ${index + 1}`;
+            subtitle.innerHTML = tableData[page][index].title;
             subtitle.id = `subtitle-${page}-${index}`;
 
             const updateButton = document.createElement('button');
@@ -130,18 +144,16 @@ function displayTables(data) {
                 const headerCell = document.createElement('th');
 
                 if (colIndex != 0) {
-
                     // Add delete button to every header cell
                     const deleteButton = document.createElement('button');
                     deleteButton.textContent = 'X';
                     deleteButton.style.marginLeft = '5px';
-                    deleteButton.addEventListener('click', () => deleteColumn(tableElement, colIndex));
+                    deleteButton.addEventListener('click', () => deleteColumn(page, index, colIndex, tableElement));
 
                     headerCell.textContent = column;
                     headerCell.appendChild(deleteButton);
                 }
                 headerRow.appendChild(headerCell);
-
             });
 
             tableElement.appendChild(headerRow);
@@ -159,7 +171,7 @@ function displayTables(data) {
                         const deleteButton = document.createElement('button');
                         deleteButton.textContent = 'X';
                         deleteButton.style.marginLeft = '5px';
-                        deleteButton.addEventListener('click', () => deleteRow(tableElement, rowIndex));
+                        deleteButton.addEventListener('click', () => deleteRow(page, index, rowIndex, tableElement));
                         cellElement.appendChild(deleteButton);
                     }
 
@@ -449,7 +461,10 @@ function updateSubtitle(page, index) {
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ rectangles: markedRectangles }), // Send updated rectangles
+                body: JSON.stringify({
+                    rectangles: markedRectangles, // Existing rectangle data
+                    tables: tableData, // Include the table data with changes
+                }),
             })
             .then(response => response.json())
             .then(data => {
