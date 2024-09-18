@@ -1,9 +1,11 @@
 [
     {
         "startX": 208,
-        "startY": 16.629628499348957,
-        "endX": 412.6666666666667,
-        "endY": 93.9629618326823,
-        "page": 0
+        "startY": 18.277781168619793,
+        "endX": 408.6666666666667,
+        "endY": 85.61111450195312,
+        "page": 0,
+        "updatedName": "rectangle${index}",
+        "updatedText": "\"Rutwij Patel\\nhttps://github.com/Rutwij12\""
     }
 ]

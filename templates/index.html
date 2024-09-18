@@ -357,6 +357,9 @@ function updateSubtitle(page, index) {
                 const textDiv = document.createElement('div');
                 textDiv.id = `text${index}`;
                 textDiv.innerHTML = `${JSON.stringify(data[index])}`;
+                markedRectangles[index].updatedName = 'rectangle${index}'; 
+                markedRectangles[index].updatedText = JSON.stringify(data[index]); 
+
 
                 const img = document.createElement('img');
                 img.src = `data:image/png;base64,${images[index]}`;
