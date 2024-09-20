@@ -1,1 +1,20 @@
-[]
+[
+    {
+        "startX": 252.9333292643229,
+        "startY": 7.816670735677083,
+        "endX": 380.26666259765625,
+        "endY": 37.150004069010414,
+        "page": 0,
+        "updatedName": "rectangle${index}",
+        "updatedText": "\"Rutwij Patel\""
+    },
+    {
+        "startX": 26.26666259765625,
+        "startY": 39,
+        "endX": 590.2666625976562,
+        "endY": 69.95000076293945,
+        "page": 0,
+        "updatedName": "rectangle${index}",
+        "updatedText": "\"Imperial College London\\nLondon, United Kingdom\\nPredicted 2:1 MEng Computing\\nSeptember 2022 - Present\""
+    }
+]

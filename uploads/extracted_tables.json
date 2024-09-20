@@ -1,23 +1,14 @@
 {
     "0": [
         {
-            "title": null,
+            "title": "Rutwij Patel\nEducation",
             "content": {
                 "index": [
                     0,
                     1,
                     2,
                     3,
-                    4,
-                    5,
-                    6,
-                    7,
-                    8,
-                    9,
-                    10,
-                    11,
-                    12,
-                    13
+                    4
                 ],
                 "columns": [
                     0,
@@ -27,87 +18,65 @@
                 ],
                 "data": [
                     [
-                        "First Name",
+                        "Imperial College London",
                         null,
-                        "Gender",
+                        null,
+                        "London, United Kingdom"
+                    ],
+                    [
+                        "Predicted 2:1 MEng Computing",
+                        null,
+                        null,
+                        "September 2022 - Present"
+                    ],
+                    [
+                        "Algorithms, Software Engineering Design, \u2022",
+                        "Operating Systems,",
+                        "Networks, Compilers,",
+                        "Linear Algebra, Architecture"
+                    ],
+                    [
+                        "Greenhead College",
+                        null,
+                        null,
+                        "Huddersfield, United Kingdom"
+                    ],
+                    [
+                        "A*A*A*A* Computer Science, Mathematics, Further Mathematics,",
+                        "A*A*A*A* Computer Science, Mathematics, Further Mathematics,",
+                        "Physics",
+                        "September 2020 - July 2022"
+                    ]
+                ]
+            }
+        },
+        {
+            "title": "Certifications\nHead of Infrastructure and Web Development\nJuly 2024 \u2013 Present\nImperial College London Data Science Society\nMaintain and manage the web services for Imperial\u2019s Data Science Society with over 400+ users. \u2022\nCurrently working on creating a NextJS React app to allow effective communication for events and socials. \u2022\nImperial Undergraduate Teaching Assistant - Programming\nSeptember 2024 \u2013 Present\nImperial College London\nSelected to be a programming mentor for incoming first-year students. Responsibilities include planning and delivering weekly \u2022\nsessions and providing feedback on assignments.\nLanguages include: Haskell, Kotlin and C \u2022",
+            "content": {
+                "index": [
+                    0,
+                    1,
+                    2
+                ],
+                "columns": [
+                    0,
+                    1,
+                    2
+                ],
+                "data": [
+                    [
+                        "Optiver X Imperial College Algorithmic Trading Course",
+                        "October 2023 \u2013",
+                        "December 2023"
+                    ],
+                    [
+                        "Optiver",
+                        null,
                         null
                     ],
                     [
-                        "Vivian",
-                        "Murphy",
-                        "Female",
-                        "23"
-                    ],
-                    [
-                        "Paige",
-                        "Sullivan",
-                        "Female",
-                        "27"
-                    ],
-                    [
-                        "Sofia",
-                        "Perry",
-                        "Female",
-                        null
-                    ],
-                    [
-                        "Aston",
-                        "Davis",
-                        "Male",
-                        "23"
-                    ],
-                    [
-                        "Olivia",
-                        "Holmes",
-                        "Female",
-                        "25"
-                    ],
-                    [
-                        "Anna",
-                        "Sullivan",
-                        "Female",
-                        null
-                    ],
-                    [
-                        "Arthur",
-                        "Foster",
-                        "Male",
-                        "28"
-                    ],
-                    [
-                        "Maya",
-                        "Carroll",
-                        "Female",
-                        "20"
-                    ],
-                    [
-                        "Oliver",
-                        "Bennett",
-                        "Male",
-                        "25"
-                    ],
-                    [
-                        "Adele",
-                        "Sullivan",
-                        "Female",
-                        "27"
-                    ],
-                    [
-                        "Stuart",
-                        "Barnes",
-                        "Male",
-                        "18"
-                    ],
-                    [
-                        "Deanna",
-                        "Perkins",
-                        "Female",
-                        "21"
-                    ],
-                    [
-                        "Carina",
-                        "Harris",
-                        "Female",
+                        "Developed strategies and implemented an Active Arbitrage Trading Strategy \u2022",
+                        null,
                         null
                     ]
                 ]

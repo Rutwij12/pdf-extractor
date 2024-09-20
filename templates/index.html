@@ -4,16 +4,18 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PDF Annotation and Extraction</title>
-    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="static/styles.css">
 </head>
 <body>
     <h1>PDF Annotation and Extraction</h1>
     <form id="pdfForm" enctype="multipart/form-data">
         <label for="pdfFile">Choose a PDF file:</label>
         <input type="file" id="pdfFile" name="pdfFile" accept=".pdf" required><br><br>
+        <div class="button-container">
         <button type="button" onclick="write_to_file()">Write To File</button>
         <button type="button" onclick="extractTables(true)">Extract Bordered Table</button>
         <button type="button" onclick="extractTables(false)">Extract Borderless Table</button>
+        </div>
     </form>
 
     <div id="extractedTextContainer"></div>
@@ -237,7 +239,7 @@ function updateSubtitle(page, index) {
 
                 pageContainer.appendChild(canvas);
                 pageContainer.appendChild(overlayCanvas);
-                pdfViewerContainer.innerHTML = '<h2>PDF Viewer:</h2>'
+                // pdfViewerContainer.innerHTML = '<h2>PDF Viewer:</h2>'
                 document.getElementById('pdfViewerContainer').appendChild(pageContainer);
 
                 page.render({
